@@ -4,8 +4,9 @@ Workspace for shared skill definitions and related tooling.
 
 ## Available Skills
 
-- `codex-review`: runs native `codex review`, captures the verbose transcript,
-  and returns a concise Markdown table of findings.
+- `codex-review`: runs native `codex review` at high reasoning effort by
+  default, captures the verbose transcript, and returns a concise Markdown
+  table of findings. Use `--effort` or `CODEX_REVIEW_EFFORT` to tune effort.
 
 ## Install
 

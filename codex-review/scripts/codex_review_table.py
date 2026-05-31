@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import re
 import subprocess
@@ -136,12 +137,19 @@ def markdown_table(findings: list[Finding], command: list[str], exit_code: int) 
     return "\n".join(lines)
 
 
+def effort_config(args: argparse.Namespace) -> list[str]:
+    if args.no_effort_override:
+        return []
+    return ["-c", f"model_reasoning_effort={json.dumps(args.effort)}"]
+
+
 def review_command(args: argparse.Namespace, repo: Path) -> list[str]:
+    command = ["codex", "review", *effort_config(args)]
     if args.uncommitted:
-        return ["codex", "review", "--uncommitted"]
+        return [*command, "--uncommitted"]
     if args.commit:
-        return ["codex", "review", "--commit", args.commit]
-    return ["codex", "review", "--base", choose_base(args.base, repo)]
+        return [*command, "--commit", args.commit]
+    return [*command, "--base", choose_base(args.base, repo)]
 
 
 def main() -> int:
@@ -149,6 +157,16 @@ def main() -> int:
     parser.add_argument("--base", default="origin/main", help="Base ref for branch review.")
     parser.add_argument("--commit", help="Review a single commit.")
     parser.add_argument("--uncommitted", action="store_true", help="Review staged, unstaged, and untracked changes.")
+    parser.add_argument(
+        "--effort",
+        default=os.environ.get("CODEX_REVIEW_EFFORT", "high"),
+        help='Reasoning effort passed to Codex review. Defaults to CODEX_REVIEW_EFFORT or "high".',
+    )
+    parser.add_argument(
+        "--no-effort-override",
+        action="store_true",
+        help="Do not pass model_reasoning_effort; use the Codex CLI/user config default.",
+    )
     parser.add_argument(
         "--raw-on-fail",
         action="store_true",

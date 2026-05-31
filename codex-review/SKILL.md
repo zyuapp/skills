@@ -9,6 +9,11 @@ Use this skill to run Codex CLI review and report only the review results. Do no
 
 `codex review` does not currently expose a quiet/suppress-output option. Always use the bundled wrapper instead of running `codex review` directly. The wrapper preserves the native `codex review` feature, captures its noisy transcript internally, and prints only the parsed Markdown table.
 
+The wrapper runs `codex review` with high reasoning effort by default using
+`-c model_reasoning_effort="high"`. Override this per run with
+`--effort <value>`, set `CODEX_REVIEW_EFFORT`, or pass `--no-effort-override`
+to rely on the user's Codex configuration.
+
 ## Workflow
 
 1. Confirm the working directory is the repository to review.
@@ -21,6 +26,12 @@ python3 <codex-review-skill-dir>/scripts/codex_review_table.py --base origin/mai
 
 3. Return the script's Markdown table to the user.
 4. If the script reports no findings, say that Codex review reported no findings.
+
+To use a different reasoning effort:
+
+```bash
+python3 <codex-review-skill-dir>/scripts/codex_review_table.py --base origin/main --effort medium
+```
 
 ## Base Branch
 
