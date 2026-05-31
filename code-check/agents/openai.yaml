@@ -1,0 +1,4 @@
+interface:
+  display_name: "Code Check"
+  short_description: "Review diffs for maintainability"
+  default_prompt: "Use $code-check to review the current changes for readability and maintainability."

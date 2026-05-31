@@ -1,0 +1,4 @@
+interface:
+  display_name: "Next Increment"
+  short_description: "Pick the next small PR slice"
+  default_prompt: "Use $next-increment to recommend the next focused implementation increment."
