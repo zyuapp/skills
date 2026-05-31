@@ -1,0 +1,4 @@
+interface:
+  display_name: "Codex Review"
+  short_description: "Run Codex CLI review and table findings"
+  default_prompt: "Use $codex-review to review the current changes against the default branch."
