@@ -1,3 +1,39 @@
 # Skills
 
 Workspace for shared skill definitions and related tooling.
+
+## Available Skills
+
+- `codex-review`: runs native `codex review`, captures the verbose transcript,
+  and returns a concise Markdown table of findings.
+
+## Install
+
+Link the skills in this repo into the local Codex skills directory:
+
+```bash
+./install.sh
+```
+
+By default, the script creates symlinks in `${CODEX_HOME:-~/.codex}/skills`.
+Set `CODEX_SKILLS_DIR` or pass `--target DIR` to install somewhere else, for
+example `./install.sh --target ~/.agents/skills`.
+
+The installer refuses to overwrite existing non-symlinked skills. Use
+`./install.sh --dry-run` to preview changes, or `./install.sh --force` to
+replace existing symlinks.
+
+## Uninstall
+
+Remove this repo's symlinks from the local Codex skills directory:
+
+```bash
+./uninstall.sh
+```
+
+The uninstall script only removes symlinks that point back to this checkout. It
+skips real directories and symlinks owned by another checkout.
+
+## License
+
+MIT

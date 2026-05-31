@@ -12,7 +12,8 @@ Use this skill to run Codex CLI review and report only the review results. Do no
 ## Workflow
 
 1. Confirm the working directory is the repository to review.
-2. Run the bundled formatter from that repository:
+2. Resolve the bundled formatter relative to this skill directory, then run it
+   from the repository being reviewed:
 
 ```bash
 python3 <codex-review-skill-dir>/scripts/codex_review_table.py --base origin/main
