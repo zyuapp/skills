@@ -1,4 +1,4 @@
 interface:
   display_name: "Write Plans"
-  short_description: "Write repo-local HTML plans"
+  short_description: "Manual skill for repo-local HTML plans"
   default_prompt: "Use $write-plans to create an implementation plan file for this work."

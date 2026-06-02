@@ -1,9 +1,11 @@
 ---
 name: next-increment
-description: Recommend the next small, self-contained implementation increment from the latest default branch and an implementation plan. Use when the user asks what to build next, says a previous branch was merged, wants the next PR scoped, or asks to continue a plan with a focused reviewable change.
+description: Manual invocation only. Use only when the user explicitly invokes $next-increment or asks to use the next-increment skill by name; do not trigger automatically from task context.
 ---
 
 # Next Increment
+
+Invocation: manual only. Do not select this skill unless the user explicitly invokes `$next-increment` or asks for this skill by name.
 
 Use this skill to choose the next focused implementation slice.
 

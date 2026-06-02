@@ -1,9 +1,11 @@
 ---
 name: ask-for-clarity
-description: Ask concise blocking clarification questions when a task cannot be completed safely from the current context. Use when the user request is ambiguous, missing required constraints, or has multiple materially different interpretations.
+description: Manual invocation only. Use only when the user explicitly invokes $ask-for-clarity or asks to use the ask-for-clarity skill by name; do not trigger automatically from task context.
 ---
 
 # Ask For Clarity
+
+Invocation: manual only. Do not select this skill unless the user explicitly invokes `$ask-for-clarity` or asks for this skill by name.
 
 Use this skill when missing information would change the implementation, output, or decision in a material way.
 

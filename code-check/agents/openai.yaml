@@ -1,4 +1,4 @@
 interface:
   display_name: "Code Check"
-  short_description: "Review diffs for maintainability"
+  short_description: "Manual skill for maintainability reviews"
   default_prompt: "Use $code-check to review the current changes for readability and maintainability."

@@ -1,9 +1,11 @@
 ---
 name: write-plans
-description: Create a self-contained implementation plan file in a repository. Use when the user asks to write, save, draft, or add a plan file for the current work.
+description: Manual invocation only. Use only when the user explicitly invokes $write-plans or asks to use the write-plans skill by name; do not trigger automatically from task context.
 ---
 
 # Write Plans
+
+Invocation: manual only. Do not select this skill unless the user explicitly invokes `$write-plans` or asks for this skill by name.
 
 Use this skill when the user wants a plan written into the repository.
 

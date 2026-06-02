@@ -4,6 +4,10 @@ Workspace for shared skill definitions and related tooling.
 
 ## Available Skills
 
+All skills in this repository are manual-invocation only. Invoke them by name,
+for example `$code-check`; their descriptions intentionally avoid automatic
+trigger guidance.
+
 - `ask-for-clarity`: asks only the blocking clarification questions needed to
   proceed, with a stated assumption for each question.
 - `code-check`: reviews recent changes for maintainability, readability,

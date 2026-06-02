@@ -1,9 +1,11 @@
 ---
 name: code-check
-description: Review recent code changes for maintainability, readability, duplication, and consistency with local patterns. Use when the user asks for a code quality pass, cleanup review, maintainability review, or refactoring-oriented check rather than a bug-focused review.
+description: Manual invocation only. Use only when the user explicitly invokes $code-check or asks to use the code-check skill by name; do not trigger automatically from task context.
 ---
 
 # Code Check
+
+Invocation: manual only. Do not select this skill unless the user explicitly invokes `$code-check` or asks for this skill by name.
 
 Use this skill to review current changes for code quality. This is not a correctness review; focus on whether the code will be easy to understand, modify, and maintain.
 

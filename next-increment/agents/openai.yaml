@@ -1,4 +1,4 @@
 interface:
   display_name: "Next Increment"
-  short_description: "Pick the next small PR slice"
+  short_description: "Manual skill for picking the next PR slice"
   default_prompt: "Use $next-increment to recommend the next focused implementation increment."
