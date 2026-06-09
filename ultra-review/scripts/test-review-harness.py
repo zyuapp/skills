@@ -113,7 +113,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         description=(
             "Creates a temporary git repo with either a deliberately unsafe patch "
             "or a security-sensitive-but-safe patch, then verifies it through "
-            "autoreview."
+            "ultra-review."
         ),
     )
     parser.add_argument("--fixture", choices=("malicious", "benign"), default="malicious")
@@ -141,10 +141,10 @@ def create_fixture_repo(repo: Path, fixture: str) -> None:
 
 
 def run_review(repo: Path, script_dir: Path, fixture: str) -> None:
-    autoreview = script_dir / "autoreview"
+    ultra_review = script_dir / "ultra-review"
     command = [
         sys.executable,
-        str(autoreview),
+        str(ultra_review),
         "--mode",
         "local",
         "--prompt",
@@ -174,7 +174,7 @@ def cleanup_repo(repo: Path) -> None:
 def main(argv: list[str]) -> int:
     args = parse_args(argv)
     script_dir = Path(__file__).resolve().parent
-    repo = Path(tempfile.mkdtemp(prefix="autoreview-fixture."))
+    repo = Path(tempfile.mkdtemp(prefix="ultra-review-fixture."))
     try:
         create_fixture_repo(repo, args.fixture)
         run_review(repo, script_dir, args.fixture)

@@ -1,17 +1,19 @@
 ---
-name: autoreview
-description: "Auto Review closeout. Codex is the only supported reviewer."
+name: ultra-review
+description: "Ultra Review closeout. Codex-only strict review for bugs, security, regressions, and structural maintainability."
 ---
 
-# Auto Review
+# Ultra Review
 
-Run the bundled structured review helper as a closeout check. This is code review, not Guardian `auto_review` approval routing.
+Run the bundled structured review helper as a strict closeout check. This is code review, not Guardian `auto_review` approval routing.
 
 Codex is the only supported reviewer. It usually delivers the best review results and should remain the normal final closeout path.
 
+This personal version treats maintainability regressions as first-class actionable findings. It should catch not only bugs, regressions, and security issues, but also structural code-quality problems that make the codebase harder to reason about.
+
 Use when:
 
-- user asks for Codex review / autoreview / second-model review
+- user asks for Codex review / ultra-review / second-model review
 - after non-trivial code edits, before final/commit/ship
 - reviewing a local branch or PR branch after fixes
 
@@ -33,6 +35,7 @@ Use when:
 - Do not kill a review just because it has been quiet for 2-5 minutes, or because it is still running under the 30-minute window. Inspect the process only after missing multiple expected heartbeats, after 30 minutes, or after an obviously failed subprocess; prefer letting the same helper command finish.
 - Tools are useful in review mode. The helper allows read-only inspection tools and web search by default so Codex can check dependency contracts, upstream docs, and current behavior.
 - Security perspective is always included, but it should not cripple legitimate functionality. Report security findings only when the change creates a concrete, actionable risk or removes an important safety check.
+- Maintainability perspective is always included. Treat structural regressions, avoidable complexity, and unclear ownership boundaries as actionable when they are concrete and local to the change.
 - For regression provenance, if no blamed PR is traceable, use the blamed commit as the provenance: commit SHA, date, and author username. Do not guess a merger or frame missing PR metadata as a separate finding.
 - Do not invoke built-in `codex review` or nested review tools from inside the review. The helper builds one bundle, calls Codex, validates one structured result, and stops.
 - Stop as soon as the helper exits 0 with no accepted/actionable findings. Do not run an extra review just to get a nicer "clean" line, a second opinion, or clearer closeout wording.
@@ -47,7 +50,7 @@ Use when:
 Dirty local work:
 
 ```bash
-<autoreview-helper> --mode local
+<ultra-review-helper> --mode local
 ```
 
 Use this only when the patch is actually unstaged/staged/untracked in the
@@ -60,32 +63,32 @@ only proves there is no local patch.
 Branch/PR work:
 
 ```bash
-<autoreview-helper> --mode branch --base origin/main
+<ultra-review-helper> --mode branch --base origin/main
 ```
 
 Optional review context is first-class:
 
 ```bash
-<autoreview-helper> --mode branch --base origin/main --prompt-file /tmp/review-notes.md --dataset /tmp/evidence.json
+<ultra-review-helper> --mode branch --base origin/main --prompt-file /tmp/review-notes.md --dataset /tmp/evidence.json
 ```
 
 If an open PR exists, use its actual base:
 
 ```bash
 base=$(gh pr view --json baseRefName --jq .baseRefName)
-<autoreview-helper> --mode branch --base "origin/$base"
+<ultra-review-helper> --mode branch --base "origin/$base"
 ```
 
 Committed single change:
 
 ```bash
-<autoreview-helper> --mode commit --commit HEAD
+<ultra-review-helper> --mode commit --commit HEAD
 ```
 
 or with the helper:
 
 ```bash
-/Users/steipete/Projects/agent-scripts/skills/autoreview/scripts/autoreview --mode commit --commit HEAD
+/Users/steipete/Projects/agent-scripts/skills/ultra-review/scripts/ultra-review --mode commit --commit HEAD
 ```
 
 Use commit review for already-landed or already-pushed work on `main`. Reviewing
@@ -98,7 +101,7 @@ with `--base`.
 Format first if formatting can change line locations. Then it is OK to run tests and review in parallel:
 
 ```bash
-scripts/autoreview --parallel-tests "<focused test command>"
+scripts/ultra-review --parallel-tests "<focused test command>"
 ```
 
 On Windows, the default `--parallel-tests` shell preserves the platform `cmd.exe`
@@ -107,12 +110,27 @@ or `--parallel-tests-shell pwsh` when the focused test command is PowerShell-spe
 
 Tradeoff: tests may force code changes that stale the review. If tests or review lead to code edits, rerun the affected tests and rerun review until no accepted/actionable findings remain. Once that rerun exits cleanly, stop; do not spend another long review cycle on redundant confirmation.
 
+## Quality Bar
+
+The default prompt is intentionally strict about implementation quality:
+
+- look for simpler structures that delete branches, modes, helper layers, casts, duplicate logic, or incidental concepts while preserving behavior
+- flag ad-hoc conditionals, one-off flags, nullable modes, scattered special cases, and feature checks bolted onto unrelated flows
+- push logic toward the canonical owning layer and prefer existing helpers or contracts over bespoke near-duplicates
+- question unnecessary optionality, loose object shapes, cast-heavy code, silent fallbacks, and unclear invariants
+- flag thin wrappers, pass-through helpers, generic magic, or abstractions that add indirection without clarifying the model
+- flag files pushed past roughly 1000 lines by the change unless the structure is clearly justified
+- flag avoidable sequential orchestration or partial-update flows when a more parallel or atomic structure would be simpler
+- prefer a few high-conviction structural findings over many cosmetic comments
+
+Maintainability findings should use category `maintainability`, point to the smallest changed line that demonstrates the issue, explain why the structure got worse, and name a concrete cleaner direction. Do not accept rename-only suggestions or broad taste preferences as actionable findings.
+
 ## Codex Options
 
 Set the Codex model and thinking/effort explicitly:
 
 ```bash
-<autoreview-helper> --model gpt-5.1 --thinking high
+<ultra-review-helper> --model gpt-5.1 --thinking high
 ```
 
 Codex maps thinking to `model_reasoning_effort` and accepts `low`, `medium`,
@@ -127,41 +145,41 @@ Run the helper directly so target selection, Codex invocation, structured valida
 OpenClaw repo-local helper:
 
 ```bash
-.agents/skills/autoreview/scripts/autoreview --help
+.agents/skills/ultra-review/scripts/ultra-review --help
 ```
 
 On native Windows, invoke the extensionless Python helper through Python:
 
 ```powershell
-python .agents\skills\autoreview\scripts\autoreview --help
+python .agents\skills\ultra-review\scripts\ultra-review --help
 ```
 
 The smoke harness has thin shell wrappers over a shared Python implementation:
 
 ```bash
-.agents/skills/autoreview/scripts/test-review-harness --fixture benign
+.agents/skills/ultra-review/scripts/test-review-harness --fixture benign
 ```
 
 ```powershell
-.agents\skills\autoreview\scripts\test-review-harness.ps1 -Fixture benign
+.agents\skills\ultra-review\scripts\test-review-harness.ps1 -Fixture benign
 ```
 
 `agent-scripts` checkout helper:
 
 ```bash
-skills/autoreview/scripts/autoreview --help
+skills/ultra-review/scripts/ultra-review --help
 ```
 
 Global helper from `agent-scripts`:
 
 ```bash
-~/.codex/skills/agent-scripts/autoreview/scripts/autoreview --help
+~/.codex/skills/agent-scripts/ultra-review/scripts/ultra-review --help
 ```
 
 If installed from `agent-scripts`, path is:
 
 ```bash
-/Users/steipete/Projects/agent-scripts/skills/autoreview/scripts/autoreview --help
+/Users/steipete/Projects/agent-scripts/skills/ultra-review/scripts/ultra-review --help
 ```
 
 The helper:
@@ -180,8 +198,8 @@ The helper:
 - supports `--model` and `--thinking` for Codex
 - allows read-only tools and web search by default; forbids nested review in the prompt; Codex is run through `codex exec` with read-only sandbox and structured output
 - prints `review still running: codex elapsed=<seconds>s pid=<pid>` to stderr at long-running intervals while waiting for Codex, unless streamed output or compact Codex activity has been visible recently
-- prints `autoreview clean: no accepted/actionable findings reported` when the selected review command exits 0
-- exits nonzero when accepted/actionable findings are present
+- prints `ultra-review clean: no accepted/actionable findings reported` when the selected review command exits 0
+- exits nonzero when accepted/actionable findings are present, including concrete maintainability regressions
 
 ## Final Report
 

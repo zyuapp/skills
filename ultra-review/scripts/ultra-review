@@ -72,6 +72,27 @@ SCHEMA: dict[str, Any] = {
 }
 
 
+QUALITY_REVIEW_RULES = """
+        Quality bar:
+        - Treat structural maintainability regressions as actionable findings, not nits.
+        - Be ambitious about simplification. Look for a cleaner framing that deletes branches, modes, helper layers, casts, duplicated logic, or incidental concepts while preserving behavior.
+        - Do not approve a change merely because it works if it makes the codebase harder to scan, reason about, or extend.
+        - Flag ad-hoc conditionals, one-off flags, nullable modes, scattered special cases, and feature checks bolted onto unrelated flows.
+        - Flag thin wrappers, pass-through helpers, generic magic, or abstractions that add indirection without making the model clearer.
+        - Push logic toward the canonical owning layer and prefer existing helpers or contracts over bespoke near-duplicates.
+        - Question unnecessary optionality, unknown/any-style boundaries, cast-heavy code, silent fallbacks, and loosely-shaped objects when a clearer invariant could exist.
+        - Flag files that cross roughly 1000 lines because of the change unless there is a strong structural reason and the file remains well organized.
+        - Flag avoidable sequential orchestration or partial-update flows when independent work or a more atomic structure would be simpler and easier to reason about.
+        - Prefer a few high-conviction structural findings over many cosmetic comments.
+
+        Maintainability finding requirements:
+        - Use category "maintainability".
+        - Point to the smallest changed line that demonstrates the structural problem.
+        - Explain why the structure is worse and name a concrete cleaner direction, such as deleting an unnecessary layer, moving logic to the owner module, extracting a focused helper, replacing repeated conditionals with an explicit model, or reusing a canonical utility.
+        - Do not report broad taste preferences, rename-only suggestions, or speculative rewrites without a clear local path.
+"""
+
+
 def run(args: list[str], cwd: Path, *, input_text: str | None = None, check: bool = True) -> subprocess.CompletedProcess[str]:
     result = subprocess.run(
         args,
@@ -222,7 +243,7 @@ def repo_root() -> Path:
         stderr=subprocess.PIPE,
     )
     if result.returncode != 0:
-        raise SystemExit("autoreview must run inside a git repository")
+        raise SystemExit("ultra-review must run inside a git repository")
     return Path(result.stdout.strip()).resolve()
 
 
@@ -444,15 +465,17 @@ def build_prompt(repo: Path, target: str, target_ref: str | None, bundle: str, e
         {json.dumps(SCHEMA, indent=2)}
         - Do not modify files.
         - Do not invoke nested reviewers or review tools.
-        - Forbidden nested review commands include: codex review, autoreview, oracle review.
+        - Forbidden nested review commands include: codex review, ultra-review, oracle review.
         - You may use read-only tools and web search to inspect files, dependency contracts, upstream docs, current behavior, and security implications.
         - Shell commands, if available, must be read-only inspection commands. Do not run tests, formatters, package installs, generators, network mutation commands, git mutation commands, or commands that write files.
-        - Report only actionable defects introduced or exposed by this change.
+        - Report only actionable defects or maintainability regressions introduced or exposed by this change.
         - Prefer high-signal findings over style feedback.
         - Include security findings: injection, secret leaks, authz/authn bypass, path traversal, unsafe deserialization, unsafe filesystem or shell use, privacy leaks, and credential handling.
         - Do not reject legitimate functionality merely because it touches shell, filesystem, network, auth, or sensitive data. Report a security finding only when the patch creates a concrete exploitable risk, removes an important safety check, or lacks validation at a trust boundary.
         - For each finding, use the smallest file/line location that demonstrates the issue.
         - If there are no actionable findings, return an empty findings array and mark the patch correct.
+
+        {QUALITY_REVIEW_RULES}
 
         Review target: {target_line}
         Repository: {repo}
@@ -716,7 +739,7 @@ def validate_report(report: dict[str, Any], repo: Path, changed_paths: set[str],
         for index, finding, rel, line in ignored_findings:
             title = finding.get("title", "<untitled>")
             print(
-                f"autoreview ignored out-of-scope finding {index}: {title} ({rel}:{line})",
+                f"ultra-review ignored out-of-scope finding {index}: {title} ({rel}:{line})",
                 file=sys.stderr,
             )
             print(bounded_field(str(finding.get("body", "")), 500), file=sys.stderr)
@@ -736,7 +759,7 @@ def number_in_range(value: Any) -> bool:
     return isinstance(value, (int, float)) and not isinstance(value, bool) and 0 <= value <= 1
 
 
-def print_report(report: dict[str, Any], *, label: str = "autoreview") -> None:
+def print_report(report: dict[str, Any], *, label: str = "ultra-review") -> None:
     findings = report["findings"]
     if findings:
         print(f"{label} findings: {len(findings)}")
@@ -827,7 +850,7 @@ def main() -> int:
     args = parse_args()
     repo = repo_root()
     target, target_ref = choose_target(repo, args.mode, args.base)
-    print(f"autoreview target: {target}")
+    print(f"ultra-review target: {target}")
     print(f"branch: {current_branch(repo)}")
     print("engine: codex")
     if args.model:
@@ -858,7 +881,7 @@ def main() -> int:
         tests_proc = start_parallel_tests(args.parallel_tests, repo, args.parallel_tests_shell)
     try:
         report = run_review(args, repo, prompt, changed_paths, args.require_finding)
-        label = "autoreview"
+        label = "ultra-review"
         if args.json_output:
             Path(args.json_output).write_text(json.dumps(report, indent=2) + "\n")
 
