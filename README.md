@@ -17,6 +17,8 @@ trigger guidance.
   focusing on what changed and why rather than a line-by-line recap.
 - `next-increment`: recommends the next small, reviewable implementation slice
   from the latest default branch and the relevant plan.
+- `summarize-code`: produces a structured summary of code changes, including
+  before/after behavior, files, functions, APIs, and risk.
 
 ## License
 
