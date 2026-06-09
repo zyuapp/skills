@@ -1,11 +1,9 @@
 ---
 name: next-increment
-description: Manual invocation only. Use only when the user explicitly invokes $next-increment or asks to use the next-increment skill by name; do not trigger automatically from task context.
+description: Recommend the next small, reviewable implementation slice from the current repository state and relevant plan. Use this skill when the user wants to choose what to build next, split work into a focused PR-sized increment, or identify the safest next step without implementing it yet.
 ---
 
 # Next Increment
-
-Invocation: manual only. Do not select this skill unless the user explicitly invokes `$next-increment` or asks for this skill by name.
 
 Use this skill to choose the next focused implementation slice.
 

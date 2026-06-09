@@ -1,6 +1,6 @@
 ---
 name: summarize-code
-description: Manual invocation only. Use only when the user explicitly invokes $summarize-code or asks to use the summarize-code skill by name; do not trigger automatically from task context.
+description: Produce a structured 6-section summary of code changes covering before behavior, after behavior, files, functions, APIs, and risk. Use this skill when the user asks to summarize changes, recap a branch or session, explain a commit or PR, or take stock of recent edits without drafting a PR description.
 ---
 
 # Summary of code changes
@@ -8,8 +8,6 @@ description: Manual invocation only. Use only when the user explicitly invokes $
 Produce a strict 6-section summary of code changes. The user uses this for code review prep, handoffs, self-checks, and "what did I just do?" moments. They want a fast, accurate, scannable picture of *exactly* what changed, how behavior changed, and *why it might be risky*.
 
 ## When to use this skill
-
-Invocation: manual only. Do not select this skill unless the user explicitly invokes `$summarize-code` or asks for this skill by name.
 
 Use it for requests like:
 
