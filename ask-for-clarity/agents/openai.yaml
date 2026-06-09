@@ -1,4 +1,0 @@
-interface:
-  display_name: "Ask For Clarity"
-  short_description: "Manual skill for blocking clarification questions"
-  default_prompt: "Use $ask-for-clarity to identify the one clarification needed before proceeding."
