@@ -12,8 +12,6 @@ Workspace for shared skill definitions and related tooling.
   from the latest default branch and the relevant plan.
 - `summarize-code`: produces a structured summary of code changes, including
   before/after behavior, files, functions, APIs, and risk.
-- `ultra-review`: runs a Codex-only strict closeout review for bugs, security,
-  regressions, and structural maintainability issues.
 
 ## License
 
