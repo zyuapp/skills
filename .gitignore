@@ -12,6 +12,10 @@
 !next-increment/**
 !suggest-qa-plan/
 !suggest-qa-plan/**
+!summarize-code/
+!summarize-code/**
+!quality-check/
+!quality-check/**
 
 ## Miscellaneous
 !README.md
