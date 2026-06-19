@@ -1,2 +1,10 @@
 *
 !.gitignore
+!babysit-coderabbit/
+!babysit-coderabbit/**
+!pr-description/
+!pr-description/**
+!next-increment/
+!next-increment/**
+!suggest-qa-plan/
+!suggest-qa-plan/**
