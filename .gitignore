@@ -1,5 +1,9 @@
+## Ignore everything so I can install skills in this folder without worrying about git.
+## I will explicitly "unignore" the skills I want to track.
 *
 !.gitignore
+
+## My skills
 !babysit-coderabbit/
 !babysit-coderabbit/**
 !pr-description/
@@ -8,3 +12,6 @@
 !next-increment/**
 !suggest-qa-plan/
 !suggest-qa-plan/**
+
+## Miscellaneous
+!README.md
