@@ -8,6 +8,7 @@ description: >
   "rewrite the PR body", "improve the PR", or references `/pr-description`.
   Also trigger when the user finishes a coding task and asks to submit, ship, or send it for review.
   Works with an optional PR number argument (e.g., `/pr-description 1234`).
+disable-model-invocation: true
 ---
 
 # PR Description Skill
