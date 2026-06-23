@@ -1,6 +1,6 @@
 ---
 name: quality-check
-description: Thorough maintainability and code-quality review of the current session or branch diff — covers duplication and missed reuse, refactoring opportunities, domain/layering boundary violations, test quality, and spaghetti/complexity. This is a quality review, not a bug or security hunt: by default it reports issues and never fixes them, but pass --fix to apply the accepted findings to the working tree after the report. Use whenever the user asks for a quality check, quality review, maintainability review, test-quality review, refactoring-opportunity review, or a review of the current session's or branch's changes — even if they just say "review my changes" in a cleanup or maintainability context. Run the review in fresh subagents, one per review angle, and report findings; with --fix, apply the accepted findings after the report.
+description: Thorough maintainability and code-quality review of the current session or branch diff — covers duplication and missed reuse, refactoring opportunities, domain/layering boundary violations, test quality, and spaghetti/complexity. This is a quality review, not a bug or security hunt: by default it reports issues and never fixes them, but pass --fix to apply accepted findings after the report, verify them, and commit the resulting local fixes. Use whenever the user asks for a quality check, quality review, maintainability review, test-quality review, refactoring-opportunity review, or a review of the current session's or branch's changes — even if they just say "review my changes" in a cleanup or maintainability context. Run the review in fresh subagents, one per review angle, and report findings; with --fix, apply accepted findings after the report and commit verified fixes.
 ---
 
 # Quality Check
@@ -13,7 +13,7 @@ Applying fixes is therefore a separate, opt-in step. By default this skill repor
 
 ## Arguments
 
-- `--fix` — after the report is delivered, apply the accepted findings to the working tree (see [Fix phase](#fix-phase-only-with---fix)). Without this flag, the skill reports and stops.
+- `--fix` — after the report is delivered, apply the accepted findings to the working tree, verify them, and commit the resulting local fixes (see [Fix phase](#fix-phase-only-with---fix)). Without this flag, the skill reports and stops.
 
 Any other argument is treated as a scope or focus hint from the user (e.g. a path, a single angle, "tests only") and passed through to scope selection and the reviewers as an explicit constraint.
 
@@ -191,7 +191,8 @@ The coordinator applies the fixes — the fresh reviewers stay report-only so th
 1. **Select what to fix.** Fix findings in severity order (blocker → high → medium → low). Apply only findings that have a concrete, mechanical, low-risk direction. **Skip** — and say you skipped — any finding that is a matter of taste, is low-conviction, needs a product or architecture decision, requires removing/changing public API or behavior, or whose fix would be larger or riskier than the problem. When in doubt, leave it for the user.
 2. **Apply.** Make the smallest change that resolves each finding, matching surrounding code style and existing codebase patterns. Group edits that touch the same file or the same root cause so the result stays coherent. Do not bundle in unrelated cleanups the review didn't flag.
 3. **Verify.** After editing, re-run whatever the repo makes cheap and relevant — formatter, linter, type-check, the affected tests. Report what you ran and the result. If something now fails because of a fix, fix it or revert that finding rather than leaving the tree broken.
-4. **Stop short of publishing.** Do not commit or push unless the user explicitly asks — consistent with the skill's restraint elsewhere. Leave the changes in the working tree for the user to review.
+4. **Commit verified fixes.** If fixes were applied and verification passes, create one normal local commit containing only the `--fix` changes. Use the repository's commit-message conventions when they are documented, otherwise use a concise scoped message such as `fix: address quality-check findings`. Never use `--no-verify`. If commit hooks format files or make other mechanical changes, review and include those hook changes in the same commit as long as they are part of the quality-check fix. If verification fails and cannot be fixed within scope, do not commit; report the failure and leave the working tree for the user.
+5. **Stop short of publishing.** Do not push unless the user explicitly asks. The `--fix` flag authorizes a local commit only, not publishing or PR updates.
 
 Then report the fix outcome, keyed back to the findings:
 
@@ -204,6 +205,9 @@ Skipped (left for you)
 
 Verification
 - <commands run and their result, or what couldn't be run and why>
+
+Commit
+- <commit SHA and subject, or why no commit was created>
 ```
 
 The original Findings report stays above this section unchanged, so the reader can always see what was flagged independently of what was fixed.
