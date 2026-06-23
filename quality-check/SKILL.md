@@ -1,13 +1,21 @@
 ---
 name: quality-check
-description: Thorough maintainability and code-quality review of the current session or branch diff — covers duplication and missed reuse, refactoring opportunities, domain/layering boundary violations, test quality, and spaghetti/complexity. This is a quality review, not a bug or security hunt: it reports issues and never fixes them. Use whenever the user asks for a quality check, quality review, maintainability review, test-quality review, refactoring-opportunity review, or a review of the current session's or branch's changes — even if they just say "review my changes" in a cleanup or maintainability context. Run the review in fresh subagents, one per review angle, and report findings only.
+description: Thorough maintainability and code-quality review of the current session or branch diff — covers duplication and missed reuse, refactoring opportunities, domain/layering boundary violations, test quality, and spaghetti/complexity. This is a quality review, not a bug or security hunt: by default it reports issues and never fixes them, but pass --fix to apply the accepted findings to the working tree after the report. Use whenever the user asks for a quality check, quality review, maintainability review, test-quality review, refactoring-opportunity review, or a review of the current session's or branch's changes — even if they just say "review my changes" in a cleanup or maintainability context. Run the review in fresh subagents, one per review angle, and report findings; with --fix, apply the accepted findings after the report.
 ---
 
 # Quality Check
 
 Run a fresh-context quality review of the current changes and report what's worth fixing. The value of this skill is a second pair of eyes that did **not** write the code: a reviewer carrying no memory of why the change was made judges it on what's actually on disk, the way a future maintainer will.
 
-Because that objectivity is the whole point, this skill only finds and reports. It does not edit files, apply patches, run formatters that write, commit, or push. Mixing fixes into the review would destroy the audit trail and bias the reviewer toward defending its own edits.
+Because that objectivity is the whole point, the **review** only finds and reports — reviewers never edit files, apply patches, run formatters that write, commit, or push. Mixing fixes into the review would destroy the audit trail and bias the reviewer toward defending its own edits.
+
+Applying fixes is therefore a separate, opt-in step. By default this skill reports and stops. Only when the user passes `--fix` does a fix phase run, and only **after** the report has been delivered — see [Fix phase](#fix-phase-only-with---fix). The fresh reviewers themselves still never touch the code, with or without `--fix`.
+
+## Arguments
+
+- `--fix` — after the report is delivered, apply the accepted findings to the working tree (see [Fix phase](#fix-phase-only-with---fix)). Without this flag, the skill reports and stops.
+
+Any other argument is treated as a scope or focus hint from the user (e.g. a path, a single angle, "tests only") and passed through to scope selection and the reviewers as an explicit constraint.
 
 ## Scope: what this reviews
 
@@ -173,3 +181,29 @@ Severity rubric (use consistently across findings):
 - **low** — optional polish; include only when evidence-backed, not as filler.
 
 If there are no findings, say so plainly and still include the Review Notes, plus any residual risk from tests you couldn't run or context you couldn't reconstruct.
+
+## Fix phase (only with `--fix`)
+
+This phase runs **only** when the user passed `--fix`, and **only after** the report above has been delivered. The report is the audit trail; it is never skipped, edited, or folded into the fixing. If `--fix` was not passed, stop after reporting.
+
+The coordinator applies the fixes — the fresh reviewers stay report-only so their objectivity is never compromised. Work from the merged, deduped findings list:
+
+1. **Select what to fix.** Fix findings in severity order (blocker → high → medium → low). Apply only findings that have a concrete, mechanical, low-risk direction. **Skip** — and say you skipped — any finding that is a matter of taste, is low-conviction, needs a product or architecture decision, requires removing/changing public API or behavior, or whose fix would be larger or riskier than the problem. When in doubt, leave it for the user.
+2. **Apply.** Make the smallest change that resolves each finding, matching surrounding code style and existing codebase patterns. Group edits that touch the same file or the same root cause so the result stays coherent. Do not bundle in unrelated cleanups the review didn't flag.
+3. **Verify.** After editing, re-run whatever the repo makes cheap and relevant — formatter, linter, type-check, the affected tests. Report what you ran and the result. If something now fails because of a fix, fix it or revert that finding rather than leaving the tree broken.
+4. **Stop short of publishing.** Do not commit or push unless the user explicitly asks — consistent with the skill's restraint elsewhere. Leave the changes in the working tree for the user to review.
+
+Then report the fix outcome, keyed back to the findings:
+
+```text
+Fixes applied
+- <file:line> — <finding> → <what changed>
+
+Skipped (left for you)
+- <file:line> — <finding> → <why not auto-fixed>
+
+Verification
+- <commands run and their result, or what couldn't be run and why>
+```
+
+The original Findings report stays above this section unchanged, so the reader can always see what was flagged independently of what was fixed.
