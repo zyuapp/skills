@@ -1,18 +1,18 @@
 ---
 name: babysit-coderabbit
 description: >
-  Triage and handle CodeRabbit review comments on a PR — spawn subagents to inspect each comment,
+  Triage and handle CodeRabbit and Claude bot review comments on a PR — spawn subagents to inspect each comment,
   dismiss the ones that don't need fixing (with a reply explaining why), then fix the rest and push.
-  Use this skill whenever the user wants to handle CodeRabbit feedback, babysit a PR's CodeRabbit review,
-  triage CR comments, deal with CodeRabbit suggestions, or says things like "handle the coderabbit comments",
+  Use this skill whenever the user wants to handle CodeRabbit or Claude bot feedback, babysit a PR's bot review,
+  triage CR comments, deal with bot suggestions, or says things like "handle the coderabbit comments",
   "babysit coderabbit", "deal with CR feedback", "triage the review comments". Also trigger when the user
-  mentions CodeRabbit comments need attention on a specific PR.
+  mentions CodeRabbit or Claude bot comments need attention on a specific PR.
 disable-model-invocation: true
 ---
 
 # Babysit CodeRabbit
 
-Triage CodeRabbit review comments on a PR by inspecting each one, deciding whether it needs a code fix or just a dismissal reply, then handling both groups in the right order.
+Triage CodeRabbit and Claude bot review comments on a PR by inspecting each one, deciding whether it needs a code fix or just a dismissal reply, then handling both groups in the right order.
 
 ## Arguments
 
@@ -20,7 +20,7 @@ Triage CodeRabbit review comments on a PR by inspecting each one, deciding wheth
 
 ## Why the order matters
 
-CodeRabbit re-reviews on every push. If you fix code first and then reply to dismissed threads, CodeRabbit sees the push, re-reviews, and may post new threads before you've finished replying — creating a mess. By replying to dismissed comments first (no push, no re-review triggered), you clear the noise before making code changes that trigger re-review.
+Review bots can re-review on every push. If you fix code first and then reply to dismissed threads, a bot can see the push, re-review, and post new threads before you've finished replying — creating a mess. By replying to dismissed comments first (no push, no re-review triggered), you clear the noise before making code changes that trigger re-review.
 
 ## Workflow
 
@@ -34,9 +34,13 @@ gh repo view --json nameWithOwner --jq '.nameWithOwner'
 gh pr view --json number,url --jq '{number: .number, url: .url}'
 ```
 
-### Step 2: Fetch all unresolved CodeRabbit review threads
+### Step 2: Fetch all unresolved bot review threads
 
-Use the GraphQL API to get unresolved threads authored by CodeRabbit, including the file path, line context, and the full comment body.
+Use the GraphQL API to get unresolved threads authored by supported review bots, including the file path, line context, and the full comment body. Supported bot authors:
+
+- `coderabbitai`
+- `claude`
+- `claude[bot]`
 
 ```bash
 gh api graphql -f query='query {
@@ -60,12 +64,14 @@ gh api graphql -f query='query {
     }
   }
 }' --jq '.data.repository.pullRequest.reviewThreads.nodes[]
+  | ["coderabbitai", "claude", "claude[bot]"] as $review_bots
   | select(.isResolved == false)
-  | select(.comments.nodes[0].author.login == "coderabbitai")
-  | select(all(.comments.nodes[1:][]; .author.login == "coderabbitai") // (.comments.nodes | length) == 1)
+  | select(.comments.nodes[0].author.login as $author | $review_bots | index($author))
+  | select(all(.comments.nodes[1:][]; .author.login as $author | $review_bots | index($author)) // (.comments.nodes | length) == 1)
   | {
       thread_id: .id,
       comment_id: .comments.nodes[0].databaseId,
+      author: .comments.nodes[0].author.login,
       path: .comments.nodes[0].path,
       body: .comments.nodes[0].body,
       url: .comments.nodes[0].url,
@@ -73,33 +79,35 @@ gh api graphql -f query='query {
     }'
 ```
 
-The filter `select(all(.comments.nodes[1:][]; .author.login == "coderabbitai") // (.comments.nodes | length) == 1)` skips threads where a non-CodeRabbit user has already replied — this prevents duplicate dismissals when the skill runs repeatedly. Only threads with no replies, or where all replies are from CodeRabbit itself, are included.
+The reply filter skips threads where a non-bot user has already replied — this prevents duplicate dismissals when the skill runs repeatedly. Only threads with no replies, or where all replies are from supported review bots, are included.
 
-If there are no unresolved CodeRabbit threads, report that and stop.
+If there are no unresolved supported bot review threads, report that and stop.
 
 ### Step 3: Inspect each comment with subagents
 
 **You MUST spawn a subagent for every comment, even if there is only one.** Do not skip this step or inline the inspection yourself, regardless of how obvious the verdict seems. The subagent reads the actual file and makes the call — this keeps the main context clean and ensures consistent evaluation.
 
-Spawn one subagent per CodeRabbit comment using the Agent tool. Run them in parallel (but cap at 5 concurrent to respect rate limits). Each subagent receives:
+Spawn one subagent per bot review comment using the Agent tool. Run them in parallel (but cap at 5 concurrent to respect rate limits). Each subagent receives:
 
-- The CodeRabbit comment body
+- The bot author
+- The bot review comment body
 - The file path
 - The PR context
 
 **Subagent prompt template:**
 
 ```
-You are inspecting a CodeRabbit review comment to decide if it needs a code fix.
+You are inspecting a bot review comment to decide if it needs a code fix.
 
-## CodeRabbit Comment
+## Bot Review Comment
+Author: {author}
 File: {path}
 Comment: {body}
 
 ## Instructions
 
 1. Read the file at `{path}` to understand the current code
-2. Understand what CodeRabbit is suggesting
+2. Understand what the review bot is suggesting
 3. Decide: does this comment warrant a code change?
 
 A comment NEEDS fixing when:
@@ -151,13 +159,13 @@ gh api graphql -f query='mutation {
 
 Always resolve the thread after replying. This prevents duplicate replies if the skill runs again, and works together with the reply-check filter in Step 2 as defense in depth.
 
-The reply should be concise and technical — explain specifically why the suggestion doesn't apply to this code. Don't be dismissive or rude; acknowledge what CodeRabbit noticed but explain why no change is needed.
+The reply should be concise and technical — explain specifically why the suggestion doesn't apply to this code. Don't be dismissive or rude; acknowledge what the review bot noticed but explain why no change is needed.
 
 **Example reply tones:**
 
 - "This null check isn't needed here — `userId` is validated by the auth middleware before this handler runs, so it's guaranteed to be non-null at this point."
 - "The suggested refactor would improve readability in isolation, but this pattern is consistent with how all other workflow steps in this codebase handle the same concern. Changing just this one would create inconsistency."
-- "CodeRabbit flagged a potential race condition, but the queue guarantees single-consumer processing per job ID, so concurrent access can't happen here."
+- "The review bot flagged a potential race condition, but the queue guarantees single-consumer processing per job ID, so concurrent access can't happen here."
 
 ### Step 6: Phase 2 — Fix comments that need addressing
 
@@ -169,22 +177,22 @@ Now handle all FIX verdicts. For each one:
 
 After fixing all issues, commit and push.
 
-Do NOT reply to threads for comments you fixed — the code change speaks for itself, and CodeRabbit will re-review after the push.
+Do NOT reply to threads for comments you fixed — the code change speaks for itself, and review bots can re-review after the push.
 
 ### Step 7: Summary
 
 Present a summary table:
 
 ```markdown
-| # | File | Verdict | Action |
-|---|------|---------|--------|
-| 1 | src/foo.ts | DISMISS | Replied: already validated upstream |
-| 2 | src/bar.ts | FIX | Fixed null check, committed in abc1234 |
-| 3 | src/baz.ts | DISMISS | Replied: matches project pattern |
+| # | Author | File | Verdict | Action |
+|---|--------|------|---------|--------|
+| 1 | coderabbitai | src/foo.ts | DISMISS | Replied: already validated upstream |
+| 2 | claude[bot] | src/bar.ts | FIX | Fixed obsolete re-export, committed in abc1234 |
+| 3 | coderabbitai | src/baz.ts | DISMISS | Replied: matches project pattern |
 ```
 
 ## Tips
 
 - If a comment is borderline, lean toward DISMISS with a good explanation rather than making unnecessary code changes. Unnecessary changes create churn and can introduce bugs.
-- CodeRabbit will re-review after the push from Phase 2. If it posts new comments, the user can run this skill again.
+- Review bots can re-review after the push from Phase 2. If they post new comments, the user can run this skill again.
 - For very large PRs (20+ threads), batch the subagent spawning into groups of 5 to avoid rate limit issues.
